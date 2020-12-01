@@ -1,21 +1,22 @@
 const express = require('express')
 const router = express.Router()
 const Url = require('../../models/url')
+const PORT = process.env.PORT ? '' : ':3000'
 const shortener = require('../../shortener')
 
 router.get('/', (req, res) => {
   res.render('index')
 })
 
+
 router.post('/', (req, res) => {
-  const input = req.body.fullUrl
+  const input = req.body.fullUrl.trim()
   const checkHttp = input.indexOf(`${req.protocol}`)
-  const head = req.headers.origin
   let long = ''
 
   if (checkHttp < 0) {
     long = `${req.protocol}://${input}`
-  } else { long = `${input}` }
+  } else long = `${input}`
   let shortUrl = ''
   let shortId = ''
   Url.find()
@@ -23,18 +24,18 @@ router.post('/', (req, res) => {
     .then(urls => {
       const checkOne = urls.find(url => { return url.fullUrl === long })
       if (checkOne) {
-        shortUrl = `${head}/${checkOne.short}`
+        shortUrl = `${req.protocol}://${req.hostname}${PORT}/${checkOne.short}`
       } else {
         shortId = shortener()
         const check = urls.find(url => url.short === shortId)
         if (check) {
-          return Url.find()
+          return check
         } else {
           Url.create({
             fullUrl: `${long}`,
             short: `${shortId}`
           })
-          shortUrl = `${head}/${shortId}`
+          shortUrl = `${req.protocol}://${req.hostname}${PORT}/${shortId}`
         }
       }
     })
@@ -45,9 +46,9 @@ router.post('/', (req, res) => {
 router.get('/:short', (req, res) => {
   const short = req.params.short
   Url.findOne({ short: `${short}` })
-    .then((url) => {
-      res.redirect(`${url.fullUrl}`)
-    })
+    .then(url => { res.redirect(`${url.fullUrl}`) })
     .catch(error => console.log(error))
+    .then(res.render('index', { error: 'The short URL does not exist!' }))
 })
+
 module.exports = router
