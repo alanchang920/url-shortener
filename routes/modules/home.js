@@ -9,12 +9,12 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
   const input = req.body.fullUrl
-  const checkHttp = input.indexOf('https://')
+  const checkHttp = input.indexOf(`${req.protocol}`)
   const head = req.headers.origin
   let long = ''
 
   if (checkHttp < 0) {
-    long = `https://${input}`
+    long = `${req.protocol}://${input}`
   } else { long = `${input}` }
   let shortUrl = ''
   let shortId = ''
@@ -28,7 +28,7 @@ router.post('/', (req, res) => {
         shortId = shortener()
         const check = urls.find(url => url.short === shortId)
         if (check) {
-          shortId = shortener()
+          return Url.find()
         } else {
           Url.create({
             fullUrl: `${long}`,
