@@ -27,16 +27,19 @@ router.post('/', (req, res) => {
         shortUrl = `${req.protocol}://${req.hostname}${PORT}/${checkOne.short}`
       } else {
         shortId = shortener()
-        const check = urls.find(url => url.short === shortId)
-        if (check) {
-          return check
-        } else {
-          Url.create({
-            fullUrl: `${long}`,
-            short: `${shortId}`
+        Url.find()
+          .then(urls => {
+            while (urls.some(url => url.short === shortId)) {
+              shortId = shortener()
+            }
+            Url.create({
+              fullUrl: `${long}`,
+              short: `${shortId}`
+            })
+            shortUrl = `${req.protocol}://${req.hostname}${PORT}/${shortId}`
           })
-          shortUrl = `${req.protocol}://${req.hostname}${PORT}/${shortId}`
-        }
+          .then(() => res.render('index', { shortUrl }))
+          .catch(error => console.log(error))
       }
     })
     .then(() => res.render('index', { shortUrl }))
@@ -48,7 +51,7 @@ router.get('/:short', (req, res) => {
   Url.findOne({ short: `${short}` })
     .then(url => { res.redirect(`${url.fullUrl}`) })
     .catch(error => console.log(error))
-    .then(res.render('index', { error: 'The short URL does not exist!' }))
+    .then(res.render('notExist', { error: 'The short URL does not exist!' }))
 })
 
 module.exports = router
